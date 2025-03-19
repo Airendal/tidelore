@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+    <title>Tidelore</title>
+    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@latest/dist/lunar.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+            transition: background 0.5s ease;
+        }
+        .card {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        #time-display {
+            font-size: 2em;
+            margin: 10px 0;
+        }
+        .moon-icon {
+            font-size: 2.5em;
+            margin: 10px 0;
+        }
+        .tide-day {
+            font-size: 1.2em;
+            margin: 8px 0;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌊 Tidelore</h1>
+    
+    <div class="card">
+        <div id="time-display">--:--:--</div>
+        <div id="hourly-tide">Loading...</div>
+    </div>
+
+    <div class="card">
+        <div id="tide-name">Loading seasonal tide...</div>
+        <div class="tide-day" id="tide-day"></div>
+        <div class="virtues" id="virtues"></div>
+    </div>
+
+    <div class="card">
+        <div class="moon-icon" id="moon-icon">🌑</div>
+        <div id="lunar-phase">Calculating moon phase...</div>
+        <div id="lunar-tide"></div>
+    </div>
+
+    <script>
+        // TIDE DATA WITH VIRTUES
+        const tides = [
+            { 
+                name: "Ashentide",
+                start: [12, 21],
+                end: [2, 20],
+                virtues: ["Acceptance", "Compassion", "Surrender"],
+                color: "#2c2c2c"
+            },
+            {
+                name: "Earthentide",
+                start: [2, 21],
+                end: [4, 20],
+                virtues: ["Patience", "Receptivity", "Trust"],
+                color: "#3d5a1f"
+            },
+            {
+                name: "Kindlingtide",
+                start: [4, 21],
+                end: [6, 20],
+                virtues: ["Courage", "Resilience", "Collaboration"],
+                color: "#b34700"
+            },
+            {
+                name: "Flametide",
+                start: [6, 21],
+                end: [8, 20],
+                virtues: ["Generosity", "Discernment", "Celebration"],
+                color: "#cc3300"
+            },
+            {
+                name: "Ripentide",
+                start: [8, 21],
+                end: [10, 20],
+                virtues: ["Humility", "Diligence", "Precision"],
+                color: "#666699"
+            },
+            {
+                name: "Dreamtide",
+                start: [10, 21],
+                end: [12, 20],
+                virtues: ["Intuition", "Synthesis", "Wonder"],
+                color: "#006699"
+            }
+        ];
+
+        const lunarTideMap = {
+            'New Moon': 'Ashentide',
+            'Waxing Crescent': 'Earthentide',
+            'First Quarter': 'Earthentide',
+            'Waxing Gibbous': 'Kindlingtide',
+            'Full Moon': 'Flametide',
+            'Waning Gibbous': 'Ripentide',
+            'Last Quarter': 'Ripentide',
+            'Waning Crescent': 'Dreamtide'
+        };
+
+        function getCurrentTide() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            
+            for(let tide of tides) {
+                let startDate, endDate;
+                
+                if(tide.name === "Ashentide") {
+                    startDate = new Date(currentYear - (now.getMonth() < 2 ? 1 : 0), 11, 21);
+                    endDate = new Date(currentYear, 1, 20);
+                } else {
+                    startDate = new Date(currentYear, tide.start[0]-1, tide.start[1]);
+                    endDate = new Date(currentYear, tide.end[0]-1, tide.end[1]);
+                }
+
+                if(now >= startDate && now <= endDate) return tide;
+            }
+            return tides[0];
+        }
+
+        function getTideProgress(tide) {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            
+            let startDate;
+            if(tide.name === "Ashentide") {
+                startDate = new Date(currentYear - (now.getMonth() < 2 ? 1 : 0), 11, 21);
+            } else {
+                startDate = new Date(currentYear, tide.start[0]-1, tide.start[1]);
+            }
+
+            const timeDiff = now - startDate;
+            const dayNumber = Math.max(Math.floor(timeDiff / (1000 * 3600 * 24)) + 1, 1);
+            const weekNumber = Math.ceil(dayNumber / 7);
+
+            return { day: dayNumber, week: weekNumber };
+        }
+
+        // SIMPLIFIED MOON PHASE CALCULATION
+        function getMoonPhase() {
+            // Approximate moon cycle (29.53 days)
+            const lunarCycle = 29.53058867;
+            const knownNewMoon = new Date('2024-01-11').getTime();
+            const now = Date.now();
+            const daysSinceNew = (now - knownNewMoon) / (1000 * 60 * 60 * 24);
+            const phase = (daysSinceNew % lunarCycle) / lunarCycle;
+            
+            if(phase < 0.03) return {icon: '🌑', name: 'New Moon'};
+            if(phase < 0.22) return {icon: '🌒', name: 'Waxing Crescent'};
+            if(phase < 0.28) return {icon: '🌓', name: 'First Quarter'};
+            if(phase < 0.47) return {icon: '🌔', name: 'Waxing Gibbous'};
+            if(phase < 0.53) return {icon: '🌕', name: 'Full Moon'};
+            if(phase < 0.72) return {icon: '🌖', name: 'Waning Gibbous'};
+            if(phase < 0.78) return {icon: '🌗', name: 'Last Quarter'};
+            return {icon: '🌘', name: 'Waning Crescent'};
+        }
+
+        function updateMoon() {
+            try {
+                const phase = getMoonPhase();
+                document.getElementById('moon-icon').textContent = phase.icon;
+                document.getElementById('lunar-phase').textContent = phase.name;
+                document.getElementById('lunar-tide').textContent = 
+                    `${lunarTideMap[phase.name] || 'Unknown'} Influence`;
+            } catch (error) {
+                console.warn('Moon calculation:', error);
+                document.getElementById('lunar-phase').textContent = 
+                    "Moon Phase: Estimation";
+            }
+        }
+
+
+
+        function updateDisplay() {
+            const now = new Date();
+            
+            // Update time
+            document.getElementById('time-display').textContent = now.toLocaleTimeString();
+            
+            // Update hourly tide
+            const currentHour = now.getHours();
+            const hourlyTide = ['Ashentide', 'Earthentide', 'Kindlingtide', 
+                               'Flametide', 'Ripentide', 'Dreamtide'][Math.floor(currentHour/4)];
+            document.getElementById('hourly-tide').textContent = `${hourlyTide} Cycle`;
+
+            // Update seasonal tide
+            const tide = getCurrentTide();
+            const progress = getTideProgress(tide);
+            
+            document.getElementById('tide-name').textContent = tide.name;
+            document.getElementById('tide-day').textContent = 
+                `${tide.name} ${progress.day}, Week ${progress.week}`;
+            document.getElementById('virtues').textContent = 
+                `${tide.virtues.join(", ")}`;
+            document.body.style.backgroundColor = tide.color;
+
+            updateMoon();
+        }
+
+
+        updateDisplay();
+        setInterval(updateDisplay, 1000);
+    </script>
+</body>
+</html>
