@@ -45,7 +45,6 @@
     </div>
 
     <div class="card">
-        <div id="tide-name">Loading seasonal tide...</div>
         <div class="tide-day" id="tide-day"></div>
         <div class="virtues" id="virtues"></div>
     </div>
@@ -197,13 +196,12 @@
             const currentHour = now.getHours();
             const hourlyTide = ['Ashentide', 'Earthentide', 'Kindlingtide', 
                                'Flametide', 'Ripentide', 'Dreamtide'][Math.floor(currentHour/4)];
-            document.getElementById('hourly-tide').textContent = `${hourlyTide} Cycle`;
+            document.getElementById('hourly-tide').textContent = `${hourlyTide}`;
 
             // Update seasonal tide
             const tide = getCurrentTide();
             const progress = getTideProgress(tide);
             
-            document.getElementById('tide-name').textContent = tide.name;
             document.getElementById('tide-day').textContent = 
                 `${tide.name} ${progress.day}, Week ${progress.week}`;
             document.getElementById('virtues').textContent = 
